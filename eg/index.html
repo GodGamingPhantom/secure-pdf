@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Secure PDF Viewer</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; user-select: none; } /* Prevent Text Selection */
+        input { padding: 10px; margin: 10px; font-size: 16px; }
+        button { padding: 10px; font-size: 16px; cursor: pointer; }
+        iframe { display: none; width: 80%; height: 500px; border: 1px solid black; margin-top: 20px; pointer-events: none; } /* Prevent Interaction */
+    </style>
+    <script>
+        // Store the hashed password (SHA-1 of "Yash")
+        const storedPasswordHash = "755281f4b3199c5461813383299683a53b73c0b5";
+
+        // Function to hash the input password using SHA-1
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function checkPassword() {
+            let enteredPassword = document.getElementById("passwordInput").value;
+            let hashedInput = await hashPassword(enteredPassword);
+
+            if (hashedInput === storedPasswordHash) {
+                document.getElementById("pdfViewer").style.display = "block";
+                document.getElementById("error").innerText = "";
+            } else {
+                document.getElementById("error").innerText = "Incorrect password. Try again.";
+            }
+        }
+
+        // Block Right Click
+        document.addEventListener("contextmenu", event => event.preventDefault());
+
+        // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (View Source)
+        document.addEventListener("keydown", event => {
+            if (event.key === "F12" || 
+                (event.ctrlKey && event.shiftKey && (event.key === "I" || event.key === "J")) || 
+                (event.ctrlKey && event.key === "U")) {
+                event.preventDefault();
+            }
+        });
+
+        // Detect if DevTools is Opened
+        function detectDevTools() {
+            let threshold = 160; // Minimum width of DevTools
+            setInterval(() => {
+                if (window.outerWidth - window.innerWidth > threshold || 
+                    window.outerHeight - window.innerHeight > threshold) {
+                    document.body.innerHTML = "<h1>Unauthorized Access Detected!</h1>";
+                }
+            }, 500);
+        }
+        detectDevTools();
+
+        // Prevent Screenshot using "Print Screen" Key
+        document.addEventListener("keydown", event => {
+            if (event.key === "PrintScreen") {
+                navigator.clipboard.writeText(""); // Clear Clipboard
+                alert("Screenshot is disabled!");
+                event.preventDefault();
+            }
+        });
+
+        // Prevent Clipboard Copy
+        document.addEventListener("copy", event => {
+            event.preventDefault();
+            alert("Copying is disabled!");
+        });
+
+        // Block Mobile Screenshot & Screen Recording
+        if (navigator.userAgent.match(/Android|iPhone|iPad|iPod/i)) {
+            document.addEventListener("visibilitychange", function () {
+                if (document.hidden) {
+                    alert("Screen capture is disabled!");
+                    document.body.innerHTML = "<h1>Unauthorized Access Detected!</h1>";
+                }
+            });
+        }
+
+        // Detect Snipping Tool & Screen Capture
+        function detectScreenCapture() {
+            let checkInterval = setInterval(() => {
+                if (document.hidden) {
+                    alert("Screen capture detected! Page will be locked.");
+                    document.body.innerHTML = "<h1>Unauthorized Access Detected!</h1>";
+                    clearInterval(checkInterval); // Stop checking
+                }
+            }, 1000);
+        }
+        detectScreenCapture();
+
+        // Add Transparent Overlay (Makes Screenshots Black)
+        function addOverlay() {
+            let overlay = document.createElement("div");
+            overlay.style.position = "fixed";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.width = "100vw";
+            overlay.style.height = "100vh";
+            overlay.style.background = "rgba(0, 0, 0, 0.8)"; /* Black Transparent Overlay */
+            overlay.style.pointerEvents = "none";
+            overlay.style.zIndex = "9999";
+            document.body.appendChild(overlay);
+        }
+        addOverlay();
+    </script>
+</head>
+<body>
+    <h1>Secure PDF Access</h1>
+    <p>Enter the password to view the PDF:</p>
+    
+    <input type="password" id="passwordInput" placeholder="Enter Password">
+    <button onclick="checkPassword()">Submit</button>
+    
+    <p id="error" style="color: red;"></p>
+    
+    <!-- Hidden PDF Viewer -->
+    <iframe id="pdfViewer" src="1.pdf"></iframe>
+</body>
+</html>

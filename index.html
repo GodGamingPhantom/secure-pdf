@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Protected PDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            margin: 0;
+            flex-direction: column;
+        }
+
+        #password-container {
+            text-align: center;
+        }
+
+        #password {
+            padding: 10px;
+            margin-top: 20px;
+            width: 300px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        #pdf-container {
+            display: none;
+            width: 80%;
+            height: 80vh;
+            border: 1px solid #ccc;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Password Protected PDF</h1>
+
+    <div id="password-container">
+        <input type="password" id="password" placeholder="Enter Password" />
+        <button onclick="checkPassword()">Submit</button>
+    </div>
+
+    <div id="pdf-container">
+        <embed id="pdf-viewer" src="/secure pdf/1.pdf" width="100%" height="100%" type="application/pdf">
+    </div>
+
+    <script>
+        const correctPassword = "mysecret123"; // Change this to your actual password
+
+        function checkPassword() {
+            const enteredPassword = document.getElementById('password').value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                document.getElementById('password-container').style.display = 'none';
+                document.getElementById('pdf-container').style.display = 'block';
+                localStorage.setItem('loggedIn', 'true');
+            } else {
+                alert("Incorrect password. Try again.");
+            }
+        }
+
+        // Prevent right-click
+        document.addEventListener('contextmenu', (event) => event.preventDefault());
+
+        // Block Print Screen using JavaScript
+        document.addEventListener('keydown', (event) => {
+            if (event.key === "PrintScreen") {
+                alert("Screenshot is disabled!");
+                event.preventDefault();
+            }
+            if (event.ctrlKey && event.key === 'P') {
+                alert("Printing is disabled!");
+                event.preventDefault();
+            }
+        });
+
+        // Auto logout when user switches tab or app is closed
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                localStorage.removeItem('loggedIn');
+                location.reload();
+            }
+        });
+
+        // If user is logged in, show the PDF directly
+        if (localStorage.getItem('loggedIn') === 'true') {
+            document.getElementById('password-container').style.display = 'none';
+            document.getElementById('pdf-container').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
